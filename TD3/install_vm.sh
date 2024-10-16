@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Set the environment variable to prevent interactive prompts
 export DEBIAN_FRONTEND=noninteractive
 exec < /dev/null
 
@@ -33,6 +34,10 @@ sudo systemctl enable docker
 
 # Print the Docker version to verify the installation
 docker --version
+
+ # Configure the registry to accept connections from the manager node
+echo '{ "insecure-registries":["192.168.56.101:5000"] }' | sudo tee /etc/docker/daemon.json
+sudo systemctl restart docker
 
 echo "Docker has been successfully installed and configured."
 echo "Please log out and log back in for the group changes to take effect."
