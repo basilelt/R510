@@ -9,13 +9,13 @@ sudo apt-get install -y ca-certificates curl gnupg
 # Add Docker's official GPG key
 sudo install -m 0755 -d /etc/apt-get/keyrings
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt-get/keyrings/docker.gpg
-sudo chmod a+r /etc/apt-get/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
 # Set up the Docker repository
 echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt-get/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt-get/sources.list.d/docker.list > /dev/null
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # Update the package index (again)
 sudo apt-get update
