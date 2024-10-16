@@ -13,7 +13,7 @@ docker service create --name registry \
 # Wait for the registry service to be ready
 echo "Waiting for registry service to be ready..."
 for i in {1..30}; do
-    if curl -s http://localhost:5000/v2/ > /dev/null; then
+    if curl -s http://192.168.56.101:5000/v2/ > /dev/null; then
         echo "Registry service is ready."
         break
     fi
@@ -25,8 +25,8 @@ for i in {1..30}; do
 done
 
 # Push the custom nginx image to the local registry
-docker tag nginx-custom localhost:5000/nginx-custom
-docker push localhost:5000/nginx-custom
+docker tag nginx-custom 192.168.56.101:5000/nginx-custom
+docker push 192.168.56.101:5000/nginx-custom
 
 # Create the overlay network
 docker network create --driver=overlay traefik-public
@@ -74,7 +74,7 @@ docker service create \
     --label "traefik.http.services.nginx.loadbalancer.server.port=80" \
     --label "traefik.http.routers.nginx.entrypoints=web,websecure" \
     --restart-condition on-failure \
-    localhost:5000/nginx-custom
+    192.168.56.101:5000/nginx-custom
 
 # Wait for nginx service to be ready
 echo "Waiting for nginx service to be ready..."
