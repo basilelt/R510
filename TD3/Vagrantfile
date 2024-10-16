@@ -12,7 +12,11 @@ Vagrant.configure("2") do |config|
       manager.vm.hostname = "manager"
         
       manager.vm.network "private_network", ip: "192.168.56.101"
-      manager.vm.network "forwarded_port", guest: 80, host: 8081
+      
+      # Forwarded Ports
+      manager.vm.network "forwarded_port", guest: 80, host: 8080
+      manager.vm.network "forwarded_port", guest: 8080, host: 8181
+      manager.vm.network "forwarded_port", guest: 443, host: 8443
 
       manager.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
       manager.vm.provision "file", source: "docker-service.sh", destination: "/home/vagrant/docker-service.sh"
@@ -30,7 +34,7 @@ Vagrant.configure("2") do |config|
         echo $WORKER_TOKEN > /vagrant/worker_token
 
         # Configure the registry to accept connections from other nodes
-        echo '{ "insecure-registries":["192.168.56.101:5000"] }' | sudo tee /etc/docker/daemon.json
+        echo '{ "insecure-registries":["localhost:5000"] }' | sudo tee /etc/docker/daemon.json
         sudo systemctl restart docker
 
         chmod +x /home/vagrant/docker-service.sh
@@ -51,7 +55,6 @@ Vagrant.configure("2") do |config|
       worker.vm.hostname = "worker#{i}"
       
       worker.vm.network "private_network", ip: "192.168.56.10#{i+1}"
-      worker.vm.network "forwarded_port", guest: 80, host: "808#{i+1}"
 
       worker.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
 
@@ -75,9 +78,10 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  # Trigger to run after all machines are up
-  config.trigger.after :up do |trigger|
-    trigger.name = "Run docker-service.sh on manager"
-    trigger.run = {inline: "vagrant ssh manager -c '/home/vagrant/docker-service.sh'"}
-  end
+  # Trigger to run after all machines are up and provisioned
+  config.trigger.after [:up, :provision], :type => :command, :run => {inline: <<-SHELL
+    echo "Running docker-service.sh on manager"
+    vagrant ssh manager -c '/home/vagrant/docker-service.sh'
+  SHELL
+  }
 end
