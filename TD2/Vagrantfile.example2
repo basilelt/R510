@@ -1,0 +1,15 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  vmnumber = 3  #variable du nombre de VM
+  (1..vmnumber).each do |i|
+    config.vm.define "master#{i}" do |master|
+      master.vm.box = "spox/ubuntu-arm"
+      master.vm.box_version = "1.0.0"
+      master.vm.hostname = "master#{i}"
+        
+      master.vm.network: private_network, ip: "192.168.56.10#{i}" #permet de configurer les adresses 192.168.56.101 a 103
+    end
+  end
+end

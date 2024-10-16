@@ -1,0 +1,9 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define "master" do |master|
+    master.vm.box = "ubuntu/trusty64"
+    master.vm.box_version = "20191107.0.0"
+  end
+end

@@ -1,0 +1,24 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.define "apache" do |apache|
+    apache.vm.box = "bento/debian-12.6"
+    apache.vm.box_version = "202407.22.0"
+    apache.vm.hostname = 'apache'
+    
+    # Private network configuration
+    apache.vm.network :private_network, ip: "192.168.56.10"
+    
+    # Port forwarding configuration
+    apache.vm.network "forwarded_port", guest: 80, host: 15234
+    
+    # Provision Apache
+    apache.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install -y apache2
+      systemctl start apache2
+      systemctl enable apache2
+    SHELL
+  end
+end

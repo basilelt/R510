@@ -1,0 +1,21 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  vmnumber = 3
+  (1..vmnumber).each do |i|
+    config.vm.define "nginx#{i}" do |nginx|
+      nginx.vm.box = "bento/debian-12.6"
+      nginx.vm.box_version = "202407.22.0"
+      nginx.vm.hostname = "nginx#{i}"
+        
+      nginx.vm.network "private_network", ip: "192.168.56.2#{i}"
+      nginx.vm.network "forwarded_port", guest: 80, host: "808#{i}"
+
+      nginx.vm.provision "shell", inline: <<-SHELL
+        apt update
+        apt install -y nginx
+      SHELL
+    end
+  end
+end
