@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export DEBIAN_FRONTEND=noninteractive
+exec < /dev/null
 
 # Update the package index and install required dependencies
 sudo apt-get update
