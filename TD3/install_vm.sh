@@ -24,7 +24,7 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Add the current user to the docker group to run Docker without sudo
-sudo usermod -aG docker $USER
+sudo usermod -aG docker vagrant
 
 # Start and enable the Docker service
 sudo systemctl start docker
