@@ -1,0 +1,57 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+
+  config.vm.define "manager" do |manager|
+      manager.vm.box = "bento/debian-12.5"
+      manager.vm.box_version = "202404.23.0"
+      manager.vm.hostname = "manager"
+        
+      manager.vm.network "private_network", ip: "192.168.56.101"
+
+      manager.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
+
+      manager.vm.provision "shell", inline: <<-SHELL
+        chmod +x /home/vagrant/install_vm.sh
+        /home/vagrant/install_vm.sh
+
+        docker swarm init --advertise-addr 192.168.56.101
+
+        WORKER_TOKEN=$(docker swarm join-token worker -q)
+        echo $WORKER_TOKEN > /vagrant/worker_token
+      SHELL
+
+      manager.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+        vb.cpus = 2
+      end
+  end
+
+  vmnumber = 2
+  (1..vmnumber).each do |i|
+    config.vm.define "worker#{i}" do |worker|
+      worker.vm.box = "bento/debian-12.5"
+      worker.vm.box_version = "202404.23.0"
+      worker.vm.hostname = "worker#{i}"
+        
+      worker.vm.network "private_network", ip: "192.168.56.10#{i+1}"
+
+      worker.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
+
+      worker.vm.provision "shell", inline: <<-SHELL
+        chmod +x /home/vagrant/install_vm.sh
+        /home/vagrant/install_vm.sh
+
+        WORKER_TOKEN=$(cat /vagrant/worker_token)
+        docker swarm join --token $WORKER_TOKEN 192.168.56.101:2377
+      SHELL
+
+      worker.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+        vb.cpus = 2
+      end
+    end
+  end
+end
