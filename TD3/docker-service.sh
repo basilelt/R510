@@ -1,5 +1,19 @@
 #!/bin/bash
 
+# Build the custom nginx image
+docker build -t nginx-custom /home/vagrant/config
+
+# Create the registry service
+docker service create --name registry --publish published=5000,target=5000 registry:2
+
+# Push the custom nginx image to the local registry
+docker tag nginx-custom localhost:5000/nginx-custom
+docker push localhost:5000/nginx-custom
+
+# Create the overlay network
+docker network create --driver=overlay traefik-public
+
+# Create the Traefik service
 docker service create \
         --name traefik \
         --constraint=node.role==manager \
@@ -27,4 +41,4 @@ docker service create \
     #--limit-cpu 4 \
     #--limit-memory 4GB \
     #--constraint 'node.role==worker' \
-    nginx
+    192.168.56.101:5000/nginx-custom

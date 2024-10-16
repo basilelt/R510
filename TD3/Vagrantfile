@@ -3,7 +3,7 @@
 
 Vagrant.configure("2") do |config|
   # Folder shared between the VM and the host
-  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+  config.vm.synced_folder "token", "/vagrant", type: "virtualbox"
 
   # Manager
   config.vm.define "manager" do |manager|
@@ -16,6 +16,7 @@ Vagrant.configure("2") do |config|
 
       manager.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
       manager.vm.provision "file", source: "docker-service.sh", destination: "/home/vagrant/docker-service.sh"
+      manager.vm.provision "file", source: "config", destination: "/home/vagrant/config"
 
       manager.vm.provision "shell", inline: <<-SHELL
         chmod +x /home/vagrant/install_vm.sh
@@ -31,8 +32,6 @@ Vagrant.configure("2") do |config|
         # Configure the registry to accept connections from other nodes
         echo '{ "insecure-registries":["192.168.56.101:5000"] }' | sudo tee /etc/docker/daemon.json
         sudo systemctl restart docker
-
-        docker network create --driver=overlay traefik-public
 
         chmod +x /home/vagrant/docker-service.sh
       SHELL
@@ -74,5 +73,11 @@ Vagrant.configure("2") do |config|
         vb.cpus = 4
       end
     end
+  end
+
+  # Trigger to run after all machines are up
+  config.trigger.after :up do |trigger|
+    trigger.name = "Run docker-service.sh on manager"
+    trigger.run = {inline: "vagrant ssh manager -c '/home/vagrant/docker-service.sh'"}
   end
 end
