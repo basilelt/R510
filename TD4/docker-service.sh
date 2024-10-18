@@ -24,20 +24,22 @@ for i in {1..30}; do
     sleep 5
 done
 
-# Cached apache2 image
-docker tag httpd:latest 192.168.56.101:5000/httpd:latest
-docker push 192.168.56.101:5000/httpd:latest
-
 # Cached mysql image
-docker tag mysql:latest 192.168.56.101:5000/mysql:latest
-docker push 192.168.56.101:5000/mysql:latest
+docker pull mysql:9.1
+docker tag mysql:9.1 192.168.56.101:5000/mysql:9.1
+docker push 192.168.56.101:5000/mysql:9.1
 
-docker build -t 192.168.56.101:5000/django-custom:latest -f Dockerfile-django .
-docker push 192.168.56.101:5000/django-custom:latest
+# Cached django image
+docker build -t 192.168.56.101:5000/django:3.12-alpine -f Dockerfile-django .
+docker push 192.168.56.101:5000/django:3.12-alpine
 
 # Cached traefik image
+docker pull traefik:v2.10
 docker tag traefik:v2.10 192.168.56.101:5000/traefik:v2.10
 docker push 192.168.56.101:5000/traefik:v2.10
+
+# Create the traefik network
+docker network create --driver overlay --attachable traefik-public
 
 # Run the docker-compose file as service
 docker stack deploy --compose-file docker-compose.yml my_stack

@@ -1,9 +1,9 @@
-FROM django:latest
+FROM python:3.12-alpine
 
 COPY ./app /app
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir django==5.1.2 mysqlclient==2.2.4 gunicorn==23.0.0
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["gunicorn", "modele.wsgi:application", "--bind", "0.0.0.0:8000"]

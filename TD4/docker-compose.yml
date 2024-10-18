@@ -3,7 +3,6 @@ version: '3.8'
 services:
   traefik:
     image: 192.168.56.101:5000/traefik:v2.10
-    container_name: traefik
     ports:
       - "80:80"
       - "8080:8080"
@@ -25,32 +24,9 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-
-  apache:
-    image: 192.168.56.101:5000/httpd:latest
-    container_name: apache
-    networks:
-      - traefik-public
-      - my_network
-    depends_on:
-      - traefik
-      - django
-    configs:
-      - source: proxy_conf
-        target: /usr/local/apache2/conf/extra/default.conf
-        mode: 0440
-    deploy:
-      restart_policy:
-        condition: on-failure
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.apache.rule=Host(`example.com`)"
-        - "traefik.http.services.apache.loadbalancer.server.port=80"
-        - "traefik.http.routers.apache.entrypoints=web,websecure"
   
   django:
     image: 192.168.56.101:5000/django-custom:latest
-    container_name: django
     networks:
       - traefik-public
       - my_network
@@ -61,6 +37,11 @@ services:
       replicas: 2
       restart_policy:
         condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.django.rule=Host(`example.com`)"
+        - "traefik.http.services.django.loadbalancer.server.port=8000"
+        - "traefik.http.routers.django.entrypoints=web,websecure"
     environment:
         - DATABASE_HOST=db
         - DATABASE_NAME=mydatabase
@@ -72,12 +53,9 @@ services:
         - source: django_config
           target: /app/modele/settings.py
           mode: 0440
-    volumes:
-      - app:/app
 
   db:
-    image: 192.168.56.101:5000/mysql:latest
-    container_name: db
+    image: 192.168.56.101:5000/mysql:9.1
     networks:
       - my_network
     volumes:
@@ -94,11 +72,17 @@ services:
       - mysql_password
       - mysql_root_password
 
-      
+
 secrets:
   mysql_root_password:
     external: true
   mysql_password:
+    external: true
+
+configs:
+  proxy_conf:
+    external: true
+  django_config:
     external: true
 
 networks:
