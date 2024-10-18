@@ -24,9 +24,10 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--log.level=DEBUG"
   
   django:
-    image: 192.168.56.101:5000/django-custom:latest
+    image: 192.168.56.101:5000/django:3.12-alpine
     networks:
       - traefik-public
       - my_network
@@ -47,6 +48,8 @@ services:
         - DATABASE_NAME=mydatabase
         - DATABASE_USER=admin
         - DATABASE_PASSWORD=/run/secrets/mysql_password
+        - DJANGO_SETTINGS_MODULE=modele.settings
+
     secrets:
         - mysql_password
     configs:
