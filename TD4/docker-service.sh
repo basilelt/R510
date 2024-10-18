@@ -32,7 +32,7 @@ docker push 192.168.56.101:5000/httpd:latest
 docker tag mysql:latest 192.168.56.101:5000/mysql:latest
 docker push 192.168.56.101:5000/mysql:latest
 
-docker build -t 192.168.56.101:5000/django-custom:latest /home/vagrant/config
+docker build -t 192.168.56.101:5000/django-custom:latest -f Dockerfile-django .
 docker push 192.168.56.101:5000/django-custom:latest
 
 # Cached traefik image
