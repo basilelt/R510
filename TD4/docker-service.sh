@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Build the custom nginx image
-docker build -t nginx-custom /home/vagrant/config
-
 # Create the registry service (only on manager nodes)
 docker service create --name registry \
     --publish published=5000,target=5000 \

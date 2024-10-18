@@ -51,9 +51,9 @@ services:
         - DATABASE_PASSWORD_FILE=/run/secrets/postgres_password
         - DJANGO_SETTINGS_MODULE=modele.settings
     command: >
-      sh -c "python manage.py makemigrations && python manage.py migrate"
+      sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     secrets:
-        - mysql_password
+        - postgres_password
     configs:
         - source: django_config
           target: /app/modele/settings.py
