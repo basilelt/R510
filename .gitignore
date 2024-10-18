@@ -1,3 +1,4 @@
 .DS_Store
 .vagrant
-worker_token
+token
+.secret

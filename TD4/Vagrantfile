@@ -1,0 +1,88 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # Folder shared between the VM and the host
+  config.vm.synced_folder "token", "/vagrant", type: "virtualbox"
+
+  # Manager
+  config.vm.define "manager" do |manager|
+      manager.vm.box = "bento/debian-12.5"
+      manager.vm.box_version = "202404.23.0"
+      manager.vm.hostname = "manager"
+        
+      manager.vm.network "private_network", ip: "192.168.56.101"
+      
+      # Forwarded Ports
+      manager.vm.network "forwarded_port", guest: 80, host: 8080
+      manager.vm.network "forwarded_port", guest: 8080, host: 8181
+      manager.vm.network "forwarded_port", guest: 443, host: 8443
+
+      manager.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
+      manager.vm.provision "file", source: "docker-service.sh", destination: "/home/vagrant/docker-service.sh"
+      manager.vm.provision "file", source: "config", destination: "/home/vagrant/config"
+
+      manager.vm.provision "shell", inline: <<-SHELL
+        chmod +x /home/vagrant/install_vm.sh
+        /home/vagrant/install_vm.sh
+
+        # Initialize the Swarm
+        docker swarm init --advertise-addr 192.168.56.101
+
+        # Get the worker token
+        WORKER_TOKEN=$(docker swarm join-token worker -q)
+        echo $WORKER_TOKEN > /vagrant/worker_token
+
+        # Configure the registry to accept connections from other nodes
+        echo '{ "insecure-registries":["192.168.56.101:5000"] }' | sudo tee /etc/docker/daemon.json
+        sudo systemctl restart docker
+
+        chmod +x /home/vagrant/docker-service.sh
+      SHELL
+
+      manager.vm.provider "virtualbox" do |vb|
+        vb.memory = "8192"
+        vb.cpus = 4
+      end
+  end
+
+  # Workers
+  vmnumber = 2
+  (1..vmnumber).each do |i|
+    config.vm.define "worker#{i}" do |worker|
+      worker.vm.box = "bento/debian-12.5"
+      worker.vm.box_version = "202404.23.0"
+      worker.vm.hostname = "worker#{i}"
+      
+      worker.vm.network "private_network", ip: "192.168.56.10#{i+1}"
+
+      worker.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
+
+      worker.vm.provision "shell", inline: <<-SHELL
+        chmod +x /home/vagrant/install_vm.sh
+        /home/vagrant/install_vm.sh
+
+        # Configure the registry to accept connections from the manager node
+        echo '{ "insecure-registries":["192.168.56.101:5000"] }' | sudo tee /etc/docker/daemon.json
+        sudo systemctl restart docker
+
+        # Join the Swarm
+        WORKER_TOKEN=$(cat /vagrant/worker_token)
+        docker swarm join --token $WORKER_TOKEN 192.168.56.101:2377
+      SHELL
+
+      worker.vm.provider "virtualbox" do |vb|
+        vb.memory = "8192"
+        vb.cpus = 4
+      end
+    end
+  end
+
+  # Trigger to run after all machines are up and provisioned
+  config.trigger.after [:up, :provision] do
+    run = { inline: <<-SHELL
+      vagrant ssh manager -c '/home/vagrant/docker-service.sh'
+    SHELL
+    }
+  end
+end

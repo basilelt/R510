@@ -50,7 +50,7 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
                 virtualbox \
                 virtualbox-ext-pack
     
-    vagrant plugin install vagrant-triggers
+    #vagrant plugin install vagrant-triggers
     
     # Enable and start the Docker service
     sudo systemctl enable docker

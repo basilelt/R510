@@ -1,0 +1,30 @@
+services:
+  nginx:
+    image: custom_nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    networks:
+      - my_network
+  
+  db:
+    image: mysql:latest
+    container_name: db
+    ports:
+      - "3306:3306"
+    networks:
+      - my_network
+    environment:
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
+
+secrets:
+  mysql_root_password:
+    external: true
+  mysql_password:
+    external: true
+
+networks:
+  my_network:
+  
