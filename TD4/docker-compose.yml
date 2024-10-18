@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   traefik:
-    image: traefik:v2.10
+    image: 192.168.56.101:5000/traefik:v2.10
     container_name: traefik
     ports:
       - "80:80"
@@ -11,7 +11,6 @@ services:
     networks:
       - traefik-public
     deploy:
-      mode: global
       placement:
         constraints:
           - node.role == manager
@@ -27,20 +26,54 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
 
-  nginx:
-    image: 192.168.56.101:5000/nginx-custom:latest
-    container_name: nginx
+  apache:
+    image: 192.168.56.101:5000/httpd:latest
+    container_name: apache
     networks:
       - traefik-public
+      - my_network
+    depends_on:
+      - traefik
+      - django
+    configs:
+      - source: proxy_conf
+        target: /usr/local/apache2/conf/extra/default.conf
+        mode: 0440
     deploy:
-      replicas: 2
       restart_policy:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.nginx.rule=Host(`example.com`)"
-        - "traefik.http.services.nginx.loadbalancer.server.port=80"
-        - "traefik.http.routers.nginx.entrypoints=web,websecure"
+        - "traefik.http.routers.apache.rule=Host(`example.com`)"
+        - "traefik.http.services.apache.loadbalancer.server.port=80"
+        - "traefik.http.routers.apache.entrypoints=web,websecure"
+  
+  django:
+    image: 192.168.56.101:5000/django-custom:latest
+    container_name: django
+    networks:
+      - traefik-public
+      - my_network
+    depends_on:
+        - db
+        - apache
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    environment:
+        - DATABASE_HOST=db
+        - DATABASE_NAME=mydatabase
+        - DATABASE_USER=admin
+        - DATABASE_PASSWORD=/run/secrets/mysql_password
+    secrets:
+        - mysql_password
+    configs:
+        - source: django_config
+          target: /app/modele/settings.py
+          mode: 0440
+    volumes:
+      - app:/app
 
   db:
     image: 192.168.56.101:5000/mysql:latest
@@ -57,7 +90,11 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
+    secrets:
+      - mysql_password
+      - mysql_root_password
 
+      
 secrets:
   mysql_root_password:
     external: true

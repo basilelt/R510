@@ -24,13 +24,20 @@ for i in {1..30}; do
     sleep 5
 done
 
-# Push the custom nginx image to the local registry
-docker tag nginx-custom 192.168.56.101:5000/nginx-custom
-docker push 192.168.56.101:5000/nginx-custom
+# Cached apache2 image
+docker tag httpd:latest 192.168.56.101:5000/httpd:latest
+docker push 192.168.56.101:5000/httpd:latest
 
 # Cached mysql image
 docker tag mysql:latest 192.168.56.101:5000/mysql:latest
 docker push 192.168.56.101:5000/mysql:latest
+
+docker build -t 192.168.56.101:5000/django-custom:latest /home/vagrant/config
+docker push 192.168.56.101:5000/django-custom:latest
+
+# Cached traefik image
+docker tag traefik:v2.10 192.168.56.101:5000/traefik:v2.10
+docker push 192.168.56.101:5000/traefik:v2.10
 
 # Run the docker-compose file as service
 docker stack deploy --compose-file docker-compose.yml my_stack

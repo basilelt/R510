@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <form method="post" action="/bibliotheque/traitementupdate/{{id}}">
+        {% csrf_token %} <!-- code permettant de protéger votre application en évitant
+de rejouer un formulaire avec des droits différents -->
+        {{ form.as_ul }} <!-- permet d'afficher tous les champs sous forme d'une liste
+-->
+        <input type="submit" value="envoyer les données"\>
+    </form>
+</body>
+</html>

@@ -1,14 +1,7 @@
-#!/usr/bin/env bash
-set -uo pipefail
-IFS=$'\n\t'
+#!/bin/bash
 
-function cleanup() {
-    echo "Cleaning up..."
-}
+docker secret create mysql_password config/mysql_password.secret
+docker secret create mysql_root_password config/mysql_root_password.secret
 
-if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
-    trap cleanup EXIT
-
-    docker secret create mysql_password mysql_password.secret
-    docker secret create mysql_root_password mysql_root_password.secret
-fi
+docker config create django_config config/settings.py
+docker config create proxy_conf config/proxy.conf

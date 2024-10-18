@@ -16,9 +16,9 @@ Vagrant.configure("2") do |config|
     manager.vm.network "forwarded_port", guest: 8080, host: 8181
     manager.vm.network "forwarded_port", guest: 443, host: 8443
 
-    manager.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
-    manager.vm.provision "file", source: "docker-service.sh", destination: "/home/vagrant/docker-service.sh"
+    manager.vm.provision "file", source: "secret.sh", destination: "/home/vagrant/secret.sh"
     manager.vm.provision "file", source: "config", destination: "/home/vagrant/config"
+    manager.vm.provision "file", source: "app", destination: "/home/vagrant/app"
 
     manager.vm.provision "shell", inline: <<-SHELL
       chmod +x /home/vagrant/install_vm.sh
@@ -35,6 +35,9 @@ Vagrant.configure("2") do |config|
       echo '{ "insecure-registries":["192.168.56.101:5000"] }' | sudo tee /etc/docker/daemon.json
       sudo systemctl restart docker
 
+      chmod +x /home/vagrant/secret.sh
+      /home/vagrant/secret.sh
+
       chmod +x /home/vagrant/docker-service.sh
     SHELL
 
@@ -43,7 +46,7 @@ Vagrant.configure("2") do |config|
       vb.cpus = 4
     end
 
-    # **Define the trigger within the manager configuration**
+    # Define the trigger within the manager configuration
     manager.trigger.after [:up, :provision] do |trigger|
       trigger.info = "Running docker-service.sh on the manager node..."
       
