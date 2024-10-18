@@ -25,7 +25,7 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--log.level=DEBUG"
-  
+
   django:
     image: 192.168.56.101:5000/django:3.12-alpine
     networks:
@@ -33,7 +33,7 @@ services:
       - my_network
     depends_on:
         - db
-        - apache
+        - traefik
     deploy:
       replicas: 2
       restart_policy:
@@ -44,12 +44,14 @@ services:
         - "traefik.http.services.django.loadbalancer.server.port=8000"
         - "traefik.http.routers.django.entrypoints=web,websecure"
     environment:
-        - DATABASE_HOST=db
+        - DATABASE_HOST=my_stack_db
+        - DATABASE_PORT=5432
         - DATABASE_NAME=mydatabase
         - DATABASE_USER=admin
-        - DATABASE_PASSWORD=/run/secrets/mysql_password
+        - DATABASE_PASSWORD_FILE=/run/secrets/postgres_password
         - DJANGO_SETTINGS_MODULE=modele.settings
-
+    command: >
+      sh -c "python manage.py makemigrations && python manage.py migrate"
     secrets:
         - mysql_password
     configs:
@@ -58,28 +60,24 @@ services:
           mode: 0440
 
   db:
-    image: 192.168.56.101:5000/mysql:9.1
+    image: 192.168.56.101:5000/postgres:17.0-alpine
     networks:
       - my_network
     volumes:
-      - db:/var/lib/mysql
+      - db:/var/lib/postgresql/data
     environment:
-      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
-      - MYSQL_USER=admin
-      - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
-      - MYSQL_DATABASE=mydatabase
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+      - POSTGRES_DB=mydatabase
     deploy:
       restart_policy:
         condition: on-failure
     secrets:
-      - mysql_password
-      - mysql_root_password
+      - postgres_password
 
 
 secrets:
-  mysql_root_password:
-    external: true
-  mysql_password:
+  postgres_password:
     external: true
 
 configs:

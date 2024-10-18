@@ -25,9 +25,9 @@ for i in {1..30}; do
 done
 
 # Cached mysql image
-docker pull mysql:9.1
-docker tag mysql:9.1 192.168.56.101:5000/mysql:9.1
-docker push 192.168.56.101:5000/mysql:9.1
+docker pull postgres:17.0-alpine
+docker tag postgres:17.0-alpine 192.168.56.101:5000/postgres:17.0-alpine
+docker push 192.168.56.101:5000/postgres:17.0-alpine
 
 # Cached django image
 docker build -t 192.168.56.101:5000/django:3.12-alpine -f Dockerfile-django .

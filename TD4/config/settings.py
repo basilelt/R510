@@ -75,13 +75,21 @@ WSGI_APPLICATION = 'modele.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
+def get_secret(secret_name):
+    try:
+        with open(os.environ.get(secret_name, ''), 'r') as secret_file:
+            return secret_file.read().strip()
+    except IOError:
+        return None
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'HOST': os.environ.get('DATABASE_HOST'),
+        'PORT': os.environ.get('DATABASE_PORT'),
         'NAME': os.environ.get('DATABASE_NAME'),
         'USER': os.environ.get('DATABASE_USER'),
-        'PASSWORD': open(os.environ.get('DATABASE_PASSWORD')).read().strip(),
+        'PASSWORD': get_secret('DATABASE_PASSWORD_FILE'),
     }
 }
 
