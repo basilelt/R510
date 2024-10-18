@@ -1,23 +1,62 @@
+version: '3.8'
+
 services:
-  nginx:
-    image: custom_nginx:latest
-    container_name: nginx
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
     ports:
       - "80:80"
+      - "8080:8080"
+      - "443:443"
     networks:
-      - my_network
-  
+      - traefik-public
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+
+  nginx:
+    image: 192.168.56.101:5000/nginx-custom:latest
+    container_name: nginx
+    networks:
+      - traefik-public
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.nginx.rule=Host(`example.com`)"
+        - "traefik.http.services.nginx.loadbalancer.server.port=80"
+        - "traefik.http.routers.nginx.entrypoints=web,websecure"
+
   db:
-    image: mysql:latest
+    image: 192.168.56.101:5000/mysql:latest
     container_name: db
-    ports:
-      - "3306:3306"
     networks:
       - my_network
+    volumes:
+      - db:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
       - MYSQL_USER=admin
       - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
+      - MYSQL_DATABASE=mydatabase
+    deploy:
+      restart_policy:
+        condition: on-failure
 
 secrets:
   mysql_root_password:
@@ -26,5 +65,9 @@ secrets:
     external: true
 
 networks:
+  traefik-public:
+    external: true
   my_network:
-  
+
+volumes:
+  db:
