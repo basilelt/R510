@@ -23,6 +23,7 @@ Vagrant.configure("2") do |config|
     manager.vm.provision "file", source: "Dockerfile-django", destination: "/home/vagrant/Dockerfile-django"
     manager.vm.provision "file", source: "docker-service.sh", destination: "/home/vagrant/docker-service.sh"
     manager.vm.provision "file", source: "install_vm.sh", destination: "/home/vagrant/install_vm.sh"
+    manager.vm.provision "file", source: "entrypoint.sh", destination: "/home/vagrant/entrypoint.sh"
     manager.vm.provision "file", source: "config", destination: "/home/vagrant/config"
     manager.vm.provision "file", source: "app", destination: "/home/vagrant/app"
 

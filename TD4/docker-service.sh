@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Create the registry service (only on manager nodes)
 docker service create --name registry \

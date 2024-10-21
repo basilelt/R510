@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Set the environment variable to prevent interactive prompts
 export DEBIAN_FRONTEND=noninteractive

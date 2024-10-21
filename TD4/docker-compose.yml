@@ -26,6 +26,31 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--log.level=DEBUG"
 
+  django-migrate:
+    image: 192.168.56.101:5000/django:3.12-alpine
+    networks:
+      - my_network
+    depends_on:
+      - db
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      - DATABASE_HOST=my_stack_db
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=mydatabase
+      - DATABASE_USER=admin
+      - DATABASE_PASSWORD_FILE=/run/secrets/postgres_password
+      - DJANGO_SETTINGS_MODULE=modele.settings
+    secrets:
+      - postgres_password
+    configs:
+      - source: django_config
+        target: /app/modele/settings.py
+        mode: 0440
+    command: python manage.py migrate
+
   django:
     image: 192.168.56.101:5000/django:3.12-alpine
     networks:
@@ -34,6 +59,7 @@ services:
     depends_on:
         - db
         - traefik
+        - django-migrate
     deploy:
       replicas: 2
       restart_policy:
@@ -50,8 +76,6 @@ services:
         - DATABASE_USER=admin
         - DATABASE_PASSWORD_FILE=/run/secrets/postgres_password
         - DJANGO_SETTINGS_MODULE=modele.settings
-    command: >
-      sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     secrets:
         - postgres_password
     configs:

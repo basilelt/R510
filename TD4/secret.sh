@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 docker secret create postgres_password config/postgres_password.secret
 

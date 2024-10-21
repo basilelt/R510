@@ -3,9 +3,11 @@ FROM python:3.12-alpine
 RUN apk add --no-cache postgresql-dev build-base
 
 COPY ./app /app
+COPY ./entrypoint.sh /entrypoint.sh
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir django==5.1.2 psycopg2==2.9.8 gunicorn==23.0.0
+RUN chmod +x /entrypoint.sh && \
+    pip install --no-cache-dir django==5.1.2 psycopg2==2.9.8 gunicorn==23.0.0
 
-CMD ["gunicorn", "modele.wsgi:application", "--bind", "0.0.0.0:8000"]
+ENTRYPOINT ["/entrypoint.sh"]
