@@ -1,0 +1,25 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=toto
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  python:
+    image: python:slim
+    deploy:
+      replicas: 2
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - python
+    deploy:
+      replicas: 1

@@ -1,0 +1,37 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/debian-12.6"
+
+  vmnumber = 2
+  (1..vmnumber).each do |i|
+    config.vm.define "vm#{i}" do |vm|
+      vm.vm.hostname = "vm1"
+      vm.vm.network "private_network", ip: "192.168.56.#{i}"
+      
+      vm.vm.provision "shell", inline: <<-SHELL
+        apt-get update
+        apt-get install -y python3 python3-venv python3-pip apache2 libapache2-mod-wsgi-py3
+        
+        mkdir /home/vagrant/django
+        python3 -m venv /home/vagrant/django/.venv
+        source /home/vagrant/django/.venv/bin/activate
+        pip3 install django
+
+        systemctl enable apache2 && systemctl start apache2
+      SHELL
+    end
+  end
+
+  config.vm.define "vm3" do |vm3|
+    vm3.vm.hostname = "vm3"
+    vm3.vm.network "private_network", ip: "192.168.56.3"
+    vm3.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install -y mariadb-server
+      
+      systemctl enable mysql && systemctl start mysql
+    SHELL
+  end
+end

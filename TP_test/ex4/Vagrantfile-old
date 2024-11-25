@@ -1,0 +1,56 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+
+  config.vm.define "master" do |master|
+    master.vm.hostname = "master"
+    master.vm.network "private_network", ip: "192.168.33.10"
+    
+    master.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install ca-certificates curl
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+      echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+        $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+        tee /etc/apt/sources.list.d/docker.list > /dev/null
+      apt-get update
+      apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      systemctl enable docker && systemctl start docker
+      
+      docker swarm init --advertise-addr 192.168.33.10
+      SWARM_JOIN_TOKEN=$(docker swarm join-token -q worker)
+      echo "$SWARM_JOIN_TOKEN" > /vagrant/swarm_token
+    SHELL
+  end
+
+  ["slave1", "slave2"].each_with_index do |name, index|
+    config.vm.define name do |node|
+      node.vm.hostname = name
+      node.vm.network "private_network", ip: "192.168.33.#{11 + index}"
+      
+      node.vm.provision "shell", inline: <<-SHELL
+        apt-get update
+        apt-get install ca-certificates curl
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.asc
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+          $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+          tee /etc/apt/sources.list.d/docker.list > /dev/null
+        apt-get update
+        apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        systemctl enable docker && systemctl start docker
+        
+        while [ ! -f /vagrant/swarm_token ]; do sleep 1; done
+        SWARM_JOIN_TOKEN=$(cat /vagrant/swarm_token)
+        docker swarm join --token "$SWARM_JOIN_TOKEN" 192.168.33.10:2377
+      SHELL
+    end
+  end
+end
